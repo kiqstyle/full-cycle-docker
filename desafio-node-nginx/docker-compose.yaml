@@ -1,37 +1,31 @@
 version: '3'
 
 services:
-
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    container_name: nginx
+    build: nginx
+    ports:
+      - 80:80
     networks:
       - node-network
-    ports:
-      - "8080:80"
     depends_on:
       - app
 
   app:
-    build:
-      context: node
-    container_name: app
+    build: node
+    entrypoint: wait-for mysql:3306 -t 40 -- ./start.sh
+    ports:
+      - 3000:3000
     networks:
       - node-network
     volumes:
       - ./node:/usr/src/app
-    tty: true
-    ports:
-      - "3000:3000"
+      - /usr/src/app/node_modules
     depends_on:
-      - db
+      - mysql
 
-  db:
+  mysql:
     image: mysql:5.7
     command: --innodb-use-native-aio=0
-    container_name: db
     restart: always
     tty: true
     volumes:
